@@ -1,21 +1,25 @@
 const express = require('express');
 const app = express();
-// this is a route, it points to the home page / root
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
-});
-// set up a contact page
+const io = require('socket.io')();
 
-app.get('/contact', (req, res) => {
-  res.sendFile(__dirname + '/contact.html');
-});
+app.use(express.static('public'));
 
-// set up a portfolio page
+app.use(require('./routes/index'));
+app.use(require('./routes/contact'));
+app.use(require('./routes/portfolio'));
 
-app.get('/portfolio', (req, res) => {
-  res.sendFile(__dirname + '/portfolio.html');
-});
-
-app.listen('3000', () => {
+const server = app.listen('3000', () => {
   console.log('app running on port 3000!');
 });
+
+io.attach(server);
+
+io.on('connection', socket => { //function {socket}
+  console.log('a user has connected!');
+  io.emit('chat message', { for : 'everyone', message : `${socket.id} is here!`});
+
+  socket.on('disconnect', () => {
+    console.log('a user disconnected');
+    io.emit('disconnect message', `${socket.id} has left the building!`);
+    });
+  });
